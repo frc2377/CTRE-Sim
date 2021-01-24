@@ -6,16 +6,18 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.TalonSRXSimCollection;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.kauailabs.navx.frc.AHRS;
 
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.hal.SimDouble;
+import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.wpilibj.simulation.ADXRS450_GyroSim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -54,7 +56,7 @@ public class DriveSubsystem extends SubsystemBase {
   // Constants.DriveConstants.kRightEncoderReversed);
 
   // The gyro sensor
-  private final ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
+  private final AHRS m_gyro = new AHRS(SPI.Port.kMXP); // NavX
 
   // Odometry class for tracking robot pose
   private final DifferentialDriveOdometry m_odometry;
@@ -65,7 +67,7 @@ public class DriveSubsystem extends SubsystemBase {
   // private EncoderSim m_rightEncoderSim;
   // The Field2d class shows the field in the sim GUI
   private Field2d m_fieldSim;
-  private ADXRS450_GyroSim m_gyroSim;
+  // private ADXRS450_GyroSim m_gyroSim;
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -88,7 +90,7 @@ public class DriveSubsystem extends SubsystemBase {
       // The encoder and gyro angle sims let us set simulated sensor readings
       // m_leftEncoderSim = new EncoderSim(m_leftEncoder);
       // m_rightEncoderSim = new EncoderSim(m_rightEncoder);
-      m_gyroSim = new ADXRS450_GyroSim(m_gyro);
+      // m_gyroSim = new ADXRS450_GyroSim(m_gyro);
 
       // the Field2d class lets us visualize our robot in the simulation GUI.
       m_fieldSim = new Field2d();
@@ -129,7 +131,13 @@ public class DriveSubsystem extends SubsystemBase {
     // m_leftEncoderSim.setRate(m_drivetrainSimulator.getLeftVelocityMetersPerSecond());
     // m_rightEncoderSim.setDistance(m_drivetrainSimulator.getRightPositionMeters());
     // m_rightEncoderSim.setRate(m_drivetrainSimulator.getRightVelocityMetersPerSecond());
-    m_gyroSim.setAngle(-m_drivetrainSimulator.getHeading().getDegrees());
+    // m_gyroSim.setAngle(-m_drivetrainSimulator.getHeading().getDegrees());
+
+    // Update NavX gyro (per
+    // https://pdocs.kauailabs.com/navx-mxp/software/roborio-libraries/java/)
+    int dev = SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]");
+    SimDouble angle = new SimDouble(SimDeviceDataJNI.getSimValueHandle(dev, "Yaw"));
+    angle.set(-m_drivetrainSimulator.getHeading().getDegrees());
   }
 
   /**
@@ -213,7 +221,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the average of the two encoder readings
    */
   // public double getAverageEncoderDistance() {
-  //   return (m_leftEncoder.getDistance() + m_rightEncoder.getDistance()) / 2.0;
+  // return (m_leftEncoder.getDistance() + m_rightEncoder.getDistance()) / 2.0;
   // }
 
   /**
@@ -229,6 +237,7 @@ public class DriveSubsystem extends SubsystemBase {
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
     m_gyro.reset();
+    m_gyro.zeroYaw();
   }
 
   /**
