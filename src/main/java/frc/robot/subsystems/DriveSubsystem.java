@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.TalonSRXSimCollection;
 import com.kauailabs.navx.frc.AHRS;
 
@@ -28,12 +29,16 @@ import frc.robot.wrappers.motorcontrollers.CCompanyTalonSRX;
 
 public class DriveSubsystem extends SubsystemBase {
   // The motors on the left side of the drive.
-  private final CCompanyTalonSRX m_leftMotors = new CCompanyTalonSRX(DriveConstants.kLeftFrontMotorPort);
-  private final CCompanyTalonSRX m_leftFollowMotor = new CCompanyTalonSRX(DriveConstants.kLeftRearMotorPort);
+  private final CCompanyTalonSRX m_leftMotors = new CCompanyTalonSRX(DriveConstants.kLeftFrontMotorPort,
+      DriveConstants.kLeftInvertMotor, DriveConstants.kLeftInvertSensorPhase);
+  private final CCompanyTalonSRX m_leftFollowMotor = new CCompanyTalonSRX(DriveConstants.kLeftRearMotorPort,
+      DriveConstants.kLeftInvertMotor, DriveConstants.kLeftInvertSensorPhase);
 
   // The motors on the right side of the drive.
-  private final CCompanyTalonSRX m_rightMotors = new CCompanyTalonSRX(DriveConstants.kRightFrontMotorPort);
-  private final CCompanyTalonSRX m_rightFollowMotor = new CCompanyTalonSRX(DriveConstants.kRightRearMotorPort);
+  private final CCompanyTalonSRX m_rightMotors = new CCompanyTalonSRX(DriveConstants.kRightFrontMotorPort,
+      DriveConstants.kRightInvertMotor, DriveConstants.kRightInvertSensorPhase);
+  private final CCompanyTalonSRX m_rightFollowMotor = new CCompanyTalonSRX(DriveConstants.kRightRearMotorPort,
+      DriveConstants.kRightInvertMotor, DriveConstants.kRightInvertSensorPhase);
 
   // Object for simulated inputs into Talon.
   TalonSRXSimCollection m_leftDriveSim = m_leftMotors.getSimCollection();
@@ -41,18 +46,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   // The robot's drive
   private final DifferentialDrive m_drive = new DifferentialDrive(m_leftMotors, m_rightMotors);
-
-  // The left-side drive encoder
-  // private final Encoder m_leftEncoder = new
-  // Encoder(Constants.DriveConstants.kLeftEncoderPorts[0],
-  // Constants.DriveConstants.kLeftEncoderPorts[1],
-  // Constants.DriveConstants.kLeftEncoderReversed);
-
-  // The right-side drive encoder
-  // private final Encoder m_rightEncoder = new
-  // Encoder(Constants.DriveConstants.kRightEncoderPorts[0],
-  // Constants.DriveConstants.kRightEncoderPorts[1],
-  // Constants.DriveConstants.kRightEncoderReversed);
 
   // The gyro sensor
   private final AHRS m_gyro = new AHRS(SPI.Port.kMXP); // NavX
@@ -62,34 +55,29 @@ public class DriveSubsystem extends SubsystemBase {
 
   // These classes help us simulate our drivetrain
   public DifferentialDrivetrainSim m_drivetrainSimulator;
-  // private EncoderSim m_leftEncoderSim;
-  // private EncoderSim m_rightEncoderSim;
   // The Field2d class shows the field in the sim GUI
   private Field2d m_fieldSim;
-  // private ADXRS450_GyroSim m_gyroSim;
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
     m_leftFollowMotor.follow(m_leftMotors);
+    m_leftFollowMotor.setInverted(InvertType.FollowMaster);
     m_rightFollowMotor.follow(m_rightMotors);
-
-    // Sets the distance per pulse for the encoders
-    // m_leftEncoder.setDistancePerPulse(Constants.DriveConstants.kEncoderDistancePerPulse);
-    // m_rightEncoder.setDistancePerPulse(Constants.DriveConstants.kEncoderDistancePerPulse);
+    m_rightFollowMotor.setInverted(InvertType.FollowMaster);
 
     resetEncoders();
     m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getHeading()));
 
     if (RobotBase.isSimulation()) { // If our robot is simulated
+      m_leftMotors.setInverted(InvertType.None);
+      m_leftMotors.setSensorPhase(false);
+      m_rightMotors.setInverted(InvertType.None);
+      m_rightMotors.setSensorPhase(false);
+
       // This class simulates our drivetrain's motion around the field.
       m_drivetrainSimulator = new DifferentialDrivetrainSim(DriveConstants.kDrivetrainPlant,
           DriveConstants.kDriveGearbox, DriveConstants.kDriveGearing, DriveConstants.kTrackwidthMeters,
           DriveConstants.kWheelDiameterMeters / 2.0, VecBuilder.fill(0, 0, 0.0001, 0.1, 0.1, 0.005, 0.005));
-
-      // The encoder and gyro angle sims let us set simulated sensor readings
-      // m_leftEncoderSim = new EncoderSim(m_leftEncoder);
-      // m_rightEncoderSim = new EncoderSim(m_rightEncoder);
-      // m_gyroSim = new ADXRS450_GyroSim(m_gyro);
 
       // the Field2d class lets us visualize our robot in the simulation GUI.
       m_fieldSim = new Field2d();
@@ -125,12 +113,6 @@ public class DriveSubsystem extends SubsystemBase {
         .setQuadratureRawPosition(CTREConvert.distanceToNativeUnits(m_drivetrainSimulator.getRightPositionMeters()));
     m_rightDriveSim.setQuadratureVelocity(
         CTREConvert.velocityToNativeUnits(m_drivetrainSimulator.getRightVelocityMetersPerSecond()));
-
-    // m_leftEncoderSim.setDistance(m_drivetrainSimulator.getLeftPositionMeters());
-    // m_leftEncoderSim.setRate(m_drivetrainSimulator.getLeftVelocityMetersPerSecond());
-    // m_rightEncoderSim.setDistance(m_drivetrainSimulator.getRightPositionMeters());
-    // m_rightEncoderSim.setRate(m_drivetrainSimulator.getRightVelocityMetersPerSecond());
-    // m_gyroSim.setAngle(-m_drivetrainSimulator.getHeading().getDegrees());
 
     // Update NavX gyro (per
     // https://pdocs.kauailabs.com/navx-mxp/software/roborio-libraries/java/)
