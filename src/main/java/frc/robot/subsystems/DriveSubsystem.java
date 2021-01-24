@@ -5,7 +5,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.TalonSRXSimCollection;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.hal.SimDouble;
@@ -25,15 +24,16 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpiutil.math.VecBuilder;
 import frc.robot.constants.DriveConstants;
 import frc.robot.utility.ctre.CTREConvert;
+import frc.robot.wrappers.motorcontrollers.CCompanyTalonSRX;
 
 public class DriveSubsystem extends SubsystemBase {
   // The motors on the left side of the drive.
-  private final WPI_TalonSRX m_leftMotors = new WPI_TalonSRX(DriveConstants.kLeftFrontMotorPort);
-  private final WPI_TalonSRX m_leftFollowMotor = new WPI_TalonSRX(DriveConstants.kLeftRearMotorPort);
+  private final CCompanyTalonSRX m_leftMotors = new CCompanyTalonSRX(DriveConstants.kLeftFrontMotorPort);
+  private final CCompanyTalonSRX m_leftFollowMotor = new CCompanyTalonSRX(DriveConstants.kLeftRearMotorPort);
 
   // The motors on the right side of the drive.
-  private final WPI_TalonSRX m_rightMotors = new WPI_TalonSRX(DriveConstants.kRightFrontMotorPort);
-  private final WPI_TalonSRX m_rightFollowMotor = new WPI_TalonSRX(DriveConstants.kRightRearMotorPort);
+  private final CCompanyTalonSRX m_rightMotors = new CCompanyTalonSRX(DriveConstants.kRightFrontMotorPort);
+  private final CCompanyTalonSRX m_rightFollowMotor = new CCompanyTalonSRX(DriveConstants.kRightRearMotorPort);
 
   // Object for simulated inputs into Talon.
   TalonSRXSimCollection m_leftDriveSim = m_leftMotors.getSimCollection();
